@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: coursesdb
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - backend-network
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "--silent" ]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
+
+  backend:
+    build: .
+    image: 7rahul/iitassignment-backend:latest
+    container_name: iit-assignment-backend
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - backend-network
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/coursesdb?createDatabaseIfNotExist=true
+
+  frontend:
+    image: 7rahul/iitassignment-frontend:latest
+    container_name: frontend
+    ports:
+        - "8081:8081"
+    networks:
+        - backend-network
+
+
+volumes:
+  mysql_data:
+
+networks:
+  backend-network:
